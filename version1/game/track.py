@@ -21,8 +21,6 @@ class Track:
         # Initial track point
         self.node_list = [(0, self.v_spacing*v_segments//2)]
 
-        self.vertical_chance = 0.05
-
         self.line_width = 5
 
         self.new_segment_pad = max(window_width + 100, h_spacing)
@@ -39,31 +37,24 @@ class Track:
         self.segments.append(TrackSegment(last[0], last[1], next_h, next_v, self.track_width, self.batch))
         
         self.node_list.append((next_h, next_v))
-
-        if np.random.random() < self.vertical_chance:
-            print("Adding vertical Segment")
-            last = self.node_list[-1]
-            while next_v == last[1]:
-                next_v = np.random.randint(self.v_segments)
-            
-            self.segments.append(TrackSegment(last[0], last[1], next_h, next_v, self.track_width, self.batch))
-            self.node_list.append((next_h, next_v))
-    
+   
 
     def draw(self, camera):
         for i, seg in enumerate(self.segments):
             if seg.is_on_camera(camera) or not self.hide_offscreen:
-                seg.visible = True
+                seg.g_upper.visible = True
+                seg.g_lower.visible = True
                 seg.shift_for_camera(camera)
             else:
-                seg.visible = False
+                seg.g_upper.visible = False
+                seg.g_lower.visible = False
 
     def update(self, player_x):
         if player_x > self.node_list[-1][0] - self.new_segment_pad:
             self.generate_next_track_segment()
 
 class TrackSegment:
-    def __init__(self, x, y, x2, y2, track_width, batch, *args, **kwargs):
+    def __init__(self, x, y, x2, y2, track_width, batch, previous=None, next=None, *args, **kwargs):
 
         self.world_position = np.array((x, y))
         self.world_position_2 = np.array((x2, y2))
@@ -86,6 +77,19 @@ class TrackSegment:
         self.g_upper = pyglet.shapes.Line(self.upper[0], self.upper[1], self.upper_2[0], self.upper_2[1], batch=batch)
         self.g_lower = pyglet.shapes.Line(self.lower[0], self.lower[1], self.lower_2[0], self.lower_2[1], batch=batch)
 
+        self.g_upper.visible = False
+        self.g_lower.visible = False
+
+        if previous is not None:
+            self.set_previous(previous)
+        if next is not None:
+            self.set_next(next)
+
+    def set_previous(self, prev):
+        self.previous_node = prev
+
+    def set_next(self, next):
+        self.next_node = next
 
     def is_on_camera(self, camera):
         return (self.world_position[0] > camera.bounds_min[0] \
