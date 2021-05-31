@@ -28,13 +28,15 @@ class Track:
         self.new_segment_pad = max(window_width + 100, h_spacing)
 
         self.hide_offscreen = True
+        
+        self.track_width = 100
 
     def generate_next_track_segment(self):
         next_h = self.node_list[-1][0] + self.h_spacing
         next_v = np.random.randint(self.v_segments)*self.v_spacing
         
         last = self.node_list[-1]
-        self.segments.append(TrackSegment(last[0], last[1], next_h, next_v, width=self.line_width, batch=self.batch))
+        self.segments.append(TrackSegment(last[0], last[1], next_h, next_v, self.track_width, self.batch))
         
         self.node_list.append((next_h, next_v))
 
@@ -44,7 +46,7 @@ class Track:
             while next_v == last[1]:
                 next_v = np.random.randint(self.v_segments)
             
-            self.segments.append(TrackSegment(last[0], last[1], next_h, next_v, width=self.line_width, batch=self.batch))
+            self.segments.append(TrackSegment(last[0], last[1], next_h, next_v, self.track_width, self.batch))
             self.node_list.append((next_h, next_v))
     
 
@@ -60,9 +62,8 @@ class Track:
         if player_x > self.node_list[-1][0] - self.new_segment_pad:
             self.generate_next_track_segment()
 
-class TrackSegment(shapes.Line):
-    def __init__(self, x, y, x2, y2, *args, **kwargs):
-        super(TrackSegment, self).__init__(x, y, x2, y2, *args, **kwargs)
+class TrackSegment:
+    def __init__(self, x, y, x2, y2, track_width, batch, *args, **kwargs):
 
         self.world_position = np.array((x, y))
         self.world_position_2 = np.array((x2, y2))
@@ -70,17 +71,34 @@ class TrackSegment(shapes.Line):
         self.dx = x2 - x
         self.dy = y2 - y
 
-        print("ADDING SEGMENT: ({:.1f}, {:.1f}) -> ({:.1f}, {:.1f})".format(x, y, x2, y2))
+        self.track_width = track_width
+
+        self.upper = np.array((-self.dy, self.dx))
+        self.upper = self.track_width*self.upper/np.linalg.norm(self.upper) + self.world_position
+        self.upper_2 = np.array((-self.dy, self.dx))
+        self.upper_2 = self.track_width*self.upper_2/np.linalg.norm(self.upper_2) + self.world_position_2
+
+        self.lower = np.array((self.dy, -self.dx))
+        self.lower = self.track_width*self.lower/np.linalg.norm(self.lower) + self.world_position
+        self.lower_2 = np.array((self.dy, -self.dx))
+        self.lower_2 = self.track_width*self.lower_2/np.linalg.norm(self.lower_2) + self.world_position_2
+
+        self.g_upper = pyglet.shapes.Line(self.upper[0], self.upper[1], self.upper_2[0], self.upper_2[1], batch=batch)
+        self.g_lower = pyglet.shapes.Line(self.lower[0], self.lower[1], self.lower_2[0], self.lower_2[1], batch=batch)
+
 
     def is_on_camera(self, camera):
-        return (self.world_position[0] > camera.world_position[0] - camera.bounds_padding \
-                and self.world_position[0] < camera.world_position[0] + camera.width + camera.bounds_padding) \
-            or (self.world_position_2[0] > camera.world_position[0] - camera.bounds_padding \
-                and self.world_position_2[0] < camera.world_position[0] + camera.width + camera.bounds_padding) \
-            or (self.world_position[0] < camera.world_position[0] - camera.bounds_padding 
-                and self.world_position_2[0] > camera.world_position[0] + camera.width + camera.bounds_padding)
+        return (self.world_position[0] > camera.bounds_min[0] \
+                and self.world_position[0] < camera.bounds_max[0]) \
+            or (self.world_position_2[0] > camera.bounds_min[0] \
+                and self.world_position_2[0] < camera.bounds_max[0]) \
+            or (self.world_position[0] < camera.bounds_min[0] 
+                and self.world_position_2[0] > camera.bounds_max[0])
         # return camera.is_in_bounds((self.world_position[0] , self.world_position[1])) or camera.is_in_bounds((self.world_position_2[0], self.world_position_2[1]))
 
     def shift_for_camera(self, camera):
-        self.x, self.y = camera.transform_point(self.world_position[0], self.world_position[1])
-        self.x2, self.y2 = camera.transform_point(self.world_position_2[0], self.world_position_2[1])
+        self.g_upper.x, self.g_upper.y = camera.transform_point(self.upper[0], self.upper[1])
+        self.g_upper.x2, self.g_upper.y2 = camera.transform_point(self.upper_2[0], self.upper_2[1])
+
+        self.g_lower.x, self.g_lower.y = camera.transform_point(self.lower[0], self.lower[1])
+        self.g_lower.x2, self.g_lower.y2 = camera.transform_point(self.lower_2[0], self.lower_2[1])

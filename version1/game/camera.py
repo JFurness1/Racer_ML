@@ -20,6 +20,12 @@ class Camera:
         if self.focus is not None:
             self.world_position[0] = self.focus.world_position[0] - self.width//2
             self.world_position[1] = self.focus.world_position[1] - self.height//2
+        self.bounds_min = [
+            self.world_position[0] - self.bounds_padding, 
+            self.world_position[1] - self.bounds_padding]
+        self.bounds_max = [
+            self.world_position[0] + self.width +  self.bounds_padding,
+            self.world_position[1] + self.height +  self.bounds_padding]
 
     
     def draw(self):
