@@ -9,7 +9,7 @@ class Player(physicalobject.PhysicalObject):
         
         super(Player, self).__init__(img=self.ss[0], *args, **kwargs)
 
-        self.thrust = 12000.0
+        self.thrust = 20000.0
         self.rotate_speed = 200.0
 
         self.frame = 0
@@ -19,11 +19,11 @@ class Player(physicalobject.PhysicalObject):
     def update(self, dt):
 
         if self.key_handler[key.LEFT]:
-            self.rotate(np.radians(self.rotate_speed*dt))
-            
+            self.rotate(np.radians(self.rotate_speed*dt))    
         if self.key_handler[key.RIGHT]:
             self.rotate(-np.radians(self.rotate_speed*dt))
-        self.frame = int(max(0.0, self.d_rotation)//23)%16
+            
+        self.frame = int((max(0.0, self.d_rotation) + 15)//23)%16
         self.image = self.ss[self.frame]
 
         if self.key_handler[key.UP]:

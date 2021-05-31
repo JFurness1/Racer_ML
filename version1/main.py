@@ -28,7 +28,7 @@ for item in game_objects:
     camera.add_item(item)
 camera.focus = player_car
 
-track = Track(main_batch, game_window.width, game_window.height)
+track = Track(main_batch, game_window.width, 2*game_window.height, v_segments=30, h_spacing=300)
 for i, n in enumerate(track.node_list):
     print("node",i,":",n)
 

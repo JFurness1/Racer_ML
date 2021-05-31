@@ -1,3 +1,4 @@
+from numpy.lib.utils import byte_bounds
 import pyglet
 from pyglet import shapes
 import numpy as np
@@ -20,11 +21,13 @@ class Track:
         # Initial track point
         self.node_list = [(0, self.v_spacing*v_segments//2)]
 
-        self.vertical_chance = 0.25
+        self.vertical_chance = 0.05
 
         self.line_width = 5
 
         self.new_segment_pad = max(window_width + 100, h_spacing)
+
+        self.hide_offscreen = True
 
     def generate_next_track_segment(self):
         next_h = self.node_list[-1][0] + self.h_spacing
@@ -47,7 +50,7 @@ class Track:
 
     def draw(self, camera):
         for i, seg in enumerate(self.segments):
-            if seg.is_on_camera(camera):
+            if seg.is_on_camera(camera) or not self.hide_offscreen:
                 seg.visible = True
                 seg.shift_for_camera(camera)
             else:
@@ -70,7 +73,13 @@ class TrackSegment(shapes.Line):
         print("ADDING SEGMENT: ({:.1f}, {:.1f}) -> ({:.1f}, {:.1f})".format(x, y, x2, y2))
 
     def is_on_camera(self, camera):
-        return camera.is_in_bounds((self.world_position[0] , self.world_position[1])) or camera.is_in_bounds((self.world_position_2[0], self.world_position_2[1]))
+        return (self.world_position[0] > camera.world_position[0] - camera.bounds_padding \
+                and self.world_position[0] < camera.world_position[0] + camera.width + camera.bounds_padding) \
+            or (self.world_position_2[0] > camera.world_position[0] - camera.bounds_padding \
+                and self.world_position_2[0] < camera.world_position[0] + camera.width + camera.bounds_padding) \
+            or (self.world_position[0] < camera.world_position[0] - camera.bounds_padding 
+                and self.world_position_2[0] > camera.world_position[0] + camera.width + camera.bounds_padding)
+        # return camera.is_in_bounds((self.world_position[0] , self.world_position[1])) or camera.is_in_bounds((self.world_position_2[0], self.world_position_2[1]))
 
     def shift_for_camera(self, camera):
         self.x, self.y = camera.transform_point(self.world_position[0], self.world_position[1])

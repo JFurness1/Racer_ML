@@ -11,8 +11,9 @@ class PhysicalObject(pyglet.sprite.Sprite):
         self.speed = 0.0
         self.force = np.array((0.0, 0.0))
 
-        self.aligned_friction = 0.5
-        self.normal_friction = 2.0
+        self.aligned_friction_coef = 0.75
+        self.normal_friction_coef = 2.5
+        self.momentum_diversion_coef = 0.95
 
         # Unit vector pointing in direction of 
         self.direction = np.array((0.0, 1.0))
@@ -31,8 +32,10 @@ class PhysicalObject(pyglet.sprite.Sprite):
             self.aligned_velocity[0] = self.aligned_velocity[1] = 0.0
             self.normal_velocity[0] = self.normal_velocity[1] = 0.0
 
-        friction = -1.0*self.velocity
-        self.force += friction
+        aligned_friction = -self.aligned_friction_coef*self.aligned_velocity
+        normal_friction = -self.normal_friction_coef*self.normal_velocity
+        diverted_momentum = np.linalg.norm(normal_friction)*self.momentum_diversion_coef*self.direction
+        self.force += aligned_friction + normal_friction + diverted_momentum
 
         self.velocity += self.force*dt
         self.force[0] = self.force[1] = 0.0
