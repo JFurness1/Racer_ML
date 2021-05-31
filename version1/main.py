@@ -28,14 +28,11 @@ for item in game_objects:
     camera.add_item(item)
 camera.focus = player_car
 
-track = Track(main_batch, game_window.width, 2*game_window.height, v_segments=20, h_spacing=300)
-for i, n in enumerate(track.node_list):
-    print("node",i,":",n)
+track = Track(main_batch, game_window.width, 2*game_window.height, v_segments=3, h_spacing=300)
 
 player_car.move_to(track.node_list[0][0], track.node_list[0][1])
 
 for i in range(10):
-    print("Track Segment ", i)
     track.generate_next_track_segment()
 
 global accumulated_time
