@@ -40,13 +40,14 @@ accumulated_time = 0
 
 dbg_txt = "Position: ({:.1f}, {:.1f}) Direction: ({:.1f}, {:.1f}) Velocity: {:.1f} ({:.1f}, {:.1f}) Rotation: {:.1f} ({:2d})"
 dbg_txt2 = "Aligned Velocity: {:.1f} ({:.1f}, {:.1f}) Normal Velocity: {:.1f} ({:.1f}, {:.1f})"
-cam_txt = "Camera Position: ({:d}, {:d})"
+cam_txt = "Camera Position: ({:d}, {:d}), Segment Index: {:d}"
 
 @game_window.event
 def on_draw():
     game_window.clear()
     fps_display.draw()
     main_batch.draw()
+    player_car.collision.draw()
 
 def update(dt):
     global accumulated_time
@@ -54,9 +55,9 @@ def update(dt):
     fps = 1/60.0
     while accumulated_time >= fps:
         for obj in game_objects:
-            obj.update(fps)
+            obj.update(fps, camera)
 
-        track.update(player_car.world_position[0])
+        track.update(fps, player_car)
         accumulated_time -= fps
 
     camera.update(dt)
@@ -72,7 +73,7 @@ def update(dt):
         np.linalg.norm(player_car.aligned_velocity), player_car.aligned_velocity[0], player_car.aligned_velocity[1], 
         np.linalg.norm(player_car.normal_velocity), player_car.normal_velocity[0], player_car.normal_velocity[1]
         )
-    cam_label.text = cam_txt.format(camera.world_position[0], camera.world_position[1])
+    cam_label.text = cam_txt.format(camera.world_position[0], camera.world_position[1], track.seg_index)
 
 if __name__ == "__main__":
     pyglet.clock.schedule_interval(update, 1/120.0)

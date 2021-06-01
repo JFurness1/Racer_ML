@@ -29,6 +29,9 @@ class Track:
         
         self.track_width = 100
 
+        self.seg_index = 0
+        self.last_seg = 0
+
     def generate_next_track_segment(self):
         next_h = self.node_list[-1][0] + self.h_spacing
         next_v = np.random.randint(self.v_segments)*self.v_spacing
@@ -46,12 +49,77 @@ class Track:
             if seg.is_on_camera(camera) or not self.hide_offscreen:
                 seg.set_visible(True)
                 seg.shift_for_camera(camera)
+                if i == self.last_seg:
+                    seg.g_upper.color = (255, 255, 255)
+                    seg.g_lower.color = (255, 255, 255)
+                    seg.g_bevel.color = (255, 255, 255)
+                    try:
+                        seg.previous_node.g_bevel.color = (255, 255, 255)
+                    except AttributeError:
+                        pass
+                
+                if i == self.seg_index:
+                    seg.g_upper.color = (0, 255, 0)
+                    seg.g_lower.color = (0, 255, 0)
+                    seg.g_bevel.color = (0, 255, 0)
+                    try:
+                        seg.previous_node.g_bevel.color = (0, 255, 0)
+                    except AttributeError:
+                        pass
             else:
                 seg.set_visible(False)
 
-    def update(self, player_x):
-        if player_x > self.node_list[-1][0] - self.new_segment_pad:
+    def update(self, dt, player):
+        if player.world_position[0] > self.node_list[-1][0] - self.new_segment_pad:
             self.generate_next_track_segment()
+
+        # Collision detection
+        self.last_seg = self.seg_index
+        self.seg_index = int(player.world_position[0]//self.h_spacing)
+
+        c_seg = self.segments[self.seg_index]
+
+        lines = [
+            (c_seg.upper, c_seg.upper_2, "upper"),
+            (c_seg.lower, c_seg.lower_2, "lower"),
+            (c_seg.bevel, c_seg.bevel_2, "bevel")
+        ]
+        
+        try:
+            lines.append((c_seg.previous_node.bevel, c_seg.previous_node.bevel_2, "prev_bevel"))
+        except AttributeError:
+            pass
+
+        hit = False
+        for l in lines:
+            if self.circle_line_collision(player.world_position, player.radius, l[0], l[1]) is not None:
+                # print(l)
+                player.collision.color = (0, 0, 255)
+                hit = True
+                break
+
+        if not hit:
+            player.collision.color = (255, 255, 255)
+
+    def circle_line_collision(self, cpt, rad, lpt1, lpt2):
+        loc_cpt = cpt - lpt1
+        loc_lpt2 = lpt2 - lpt1
+
+        # if loc_cpt[0] < rad or loc_cpt[0] > loc_lpt2[0] + rad:
+        #     # circle is too far from the ends of the line to be possible
+        #     return None
+        
+        projection = loc_cpt*np.dot(loc_cpt, loc_lpt2)/np.dot(loc_lpt2, loc_lpt2)
+        rejection = loc_cpt - projection
+
+        if np.linalg.norm(rejection) > rad:
+            return None
+        
+        normal = rejection/np.linalg.norm(rejection)
+        depth = np.linalg.norm(rejection) - rad
+
+        return {'normal':normal, 'depth':depth}
+
 
 class TrackSegment:
     def __init__(self, x, y, x2, y2, track_width, batch, previous=None, next=None, *args, **kwargs):
@@ -85,6 +153,9 @@ class TrackSegment:
 
         self.bevel = None
         self.bevel_2 = None
+
+        self.previous_node = None
+        self.next_node = None
 
         if previous is not None:
             self.set_previous(previous)

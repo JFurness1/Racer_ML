@@ -1,5 +1,6 @@
 import numpy as np
 from pyglet.window import key
+from pyglet import shapes
 from . import physicalobject, resources
 
 class Player(physicalobject.PhysicalObject):
@@ -16,8 +17,10 @@ class Player(physicalobject.PhysicalObject):
 
         self.key_handler = key.KeyStateHandler()
 
-    def update(self, dt):
+        self.radius = 45
+        self.collision = shapes.Arc(self.world_position[0], self.world_position[1], self.radius, closed=True, color=(255,255,255))
 
+    def update(self, dt, camera):
         if self.key_handler[key.LEFT]:
             self.rotate(np.radians(self.rotate_speed*dt))    
         if self.key_handler[key.RIGHT]:
@@ -30,7 +33,9 @@ class Player(physicalobject.PhysicalObject):
             self.force += self.direction*self.thrust*dt
         
         super(Player, self).update(dt)
-        
+        self.collision.x, self.collision.y = camera.transform_point(self.world_position[0], self.world_position[1])
+
+
     def delete(self):
         self.engine_sprite.delete()
         super(Player, self).delete()
