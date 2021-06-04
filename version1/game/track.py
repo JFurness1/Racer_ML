@@ -93,7 +93,6 @@ class Track:
         hit = False
         for l in lines:
             if self.circle_line_collision(player.world_position, player.radius, l[0], l[1]) is not None:
-                # print(l)
                 player.collision.color = (0, 0, 255)
                 hit = True
                 break
@@ -105,9 +104,9 @@ class Track:
         loc_cpt = cpt - lpt1
         loc_lpt2 = lpt2 - lpt1
 
-        # if loc_cpt[0] < rad or loc_cpt[0] > loc_lpt2[0] + rad:
-        #     # circle is too far from the ends of the line to be possible
-        #     return None
+        if loc_cpt[0] < rad or loc_cpt[0] > loc_lpt2[0] + rad:
+            # circle is too far from the ends of the line to be possible
+            return None
         
         projection = loc_cpt*np.dot(loc_cpt, loc_lpt2)/np.dot(loc_lpt2, loc_lpt2)
         rejection = loc_cpt - projection

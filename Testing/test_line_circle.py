@@ -10,7 +10,7 @@ radius = 40
 circle = shapes.Arc(cp[0], cp[1], radius, closed=True, color=(255,255,255), batch=main_batch)
 
 p1 = np.array((200, 250))
-p2 = np.array((620, 530))
+p2 = np.array((200, 550))
 line = pyglet.shapes.Line(p1[0], p1[1], p2[0], p2[1], batch=main_batch)
 global flipflop
 flipflop = True
@@ -99,13 +99,16 @@ def circle_line_collision(cpt, rad, lpt1, lpt2):
     pos_dir = np.dot(projection, loc_lpt2)
 
     if (normr > rad # Rejection is larger than rad
-            or normp > norm_lpt2 + rad # projection along line is past p2
-            or (pos_dir < 0 and normp > rad)): # we are the other way and past p1
+            or (normp > norm_lpt2 + rad and p2_dist > rad) # projection along line is past p2
+            or (pos_dir < 0 and p1_dist > rad)): # we are the other way and past p1
         return None
     
     if normp > norm_lpt2:
         # Must be close to p2 but past end of line
-        return {'normal':p2_sep/p2_dist, 'depth':rad - p2_dist}
+        if p2_dist > rad:
+            return None
+        else:
+            return {'normal':p2_sep/p2_dist, 'depth':rad - p2_dist}
     
     if p1_dist < rad and pos_dir < 0:
         # Past end of line but close to p1
