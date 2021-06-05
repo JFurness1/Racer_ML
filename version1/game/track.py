@@ -32,6 +32,8 @@ class Track:
         self.seg_index = 0
         self.last_seg = 0
 
+        self.wall_friction = 0.8
+
     def generate_next_track_segment(self):
         next_h = self.node_list[-1][0] + self.h_spacing
         next_v = np.random.randint(self.v_segments)*self.v_spacing
@@ -77,47 +79,99 @@ class Track:
         self.last_seg = self.seg_index
         self.seg_index = int(player.world_position[0]//self.h_spacing)
 
-        c_seg = self.segments[self.seg_index]
+        lines = []
 
-        lines = [
-            (c_seg.upper, c_seg.upper_2, "upper"),
-            (c_seg.lower, c_seg.lower_2, "lower"),
-            (c_seg.bevel, c_seg.bevel_2, "bevel")
-        ]
+        for i in range(-1, 1):
+            if self.seg_index + i < 0:
+                continue
+
+            c_seg = self.segments[self.seg_index + i]
+
+            lines += [
+                (c_seg.upper, c_seg.upper_2),
+                (c_seg.lower, c_seg.lower_2)
+            ]
+
+            if c_seg.bevel is not None:
+                lines.append((c_seg.bevel, c_seg.bevel_2))
         
-        try:
-            lines.append((c_seg.previous_node.bevel, c_seg.previous_node.bevel_2, "prev_bevel"))
-        except AttributeError:
-            pass
+        hit = list(filter(None,
+            [self.circle_line_collision(player.world_position, player.radius, l[0], l[1]) for l in lines]))
 
-        hit = False
-        for l in lines:
-            if self.circle_line_collision(player.world_position, player.radius, l[0], l[1]) is not None:
-                player.collision.color = (0, 0, 255)
-                hit = True
-                break
-
-        if not hit:
-            player.collision.color = (255, 255, 255)
+        
+        player.collision.color = (255, 255, 255)
+        
+        best_hit = {'dist':None}
+        for h in hit:
+            pos = player.world_position + h['normal']*h['depth']
+            dist = np.linalg.norm(player.last_position - pos)
+            if best_hit['dist'] is None or dist < best_hit['dist']:
+                best_hit['dist'] = dist
+                best_hit['normal'] = h['normal']
+                best_hit['depth'] = h['depth']
+            player.collision.color = (255, 0, 0)
+        
+        if best_hit['dist'] is not None:
+            # increase displacement by 1 pixel to avoid 
+            print("Hit!", best_hit['normal'], best_hit['depth'])
+            player.world_position += best_hit['normal']*(best_hit['depth'] + 1)
+            player.reflect_velocity(best_hit['normal'], scale=self.wall_friction)
 
     def circle_line_collision(self, cpt, rad, lpt1, lpt2):
+        if np.allclose(lpt1, lpt2):
+            # Two points are so close the line will be unstable
+            return None 
+
+        # Bounding box coarse graining
+        bb_l = min(lpt1[0], lpt2[0]) - rad
+        bb_r = max(lpt1[0], lpt2[0]) + rad
+        bb_t = max(lpt1[1], lpt2[1]) + rad
+        bb_b = min(lpt1[1], lpt2[1]) - rad
+        if cpt[0] < bb_l or cpt[0] > bb_r or cpt[1] > bb_t or cpt[1] < bb_b:
+            return None
+
         loc_cpt = cpt - lpt1
         loc_lpt2 = lpt2 - lpt1
+        norm_lpt2 = np.linalg.norm(loc_lpt2)
 
-        if loc_cpt[0] < rad or loc_cpt[0] > loc_lpt2[0] + rad:
-            # circle is too far from the ends of the line to be possible
-            return None
-        
-        projection = loc_cpt*np.dot(loc_cpt, loc_lpt2)/np.dot(loc_lpt2, loc_lpt2)
+        # If circle is centered on point 1 or 2 then resolution is arbitrarily away from line
+        if np.allclose(cpt, lpt1):
+            return {'normal':-loc_lpt2/norm_lpt2, 'depth':rad}
+        if np.allclose(cpt, lpt2):
+            return {'normal':loc_lpt2/norm_lpt2, 'depth':rad}
+
+        p1_dist = np.linalg.norm(loc_cpt)
+        p2_sep = cpt - lpt2
+        p2_dist = np.linalg.norm(p2_sep)
+
+        projection = loc_lpt2*np.dot(loc_cpt, loc_lpt2)/np.dot(loc_lpt2, loc_lpt2)
+        normp = np.linalg.norm(projection)
         rejection = loc_cpt - projection
+        normr = np.linalg.norm(rejection)
 
-        if np.linalg.norm(rejection) > rad:
+        pos_dir = np.dot(projection, loc_lpt2)
+
+        if (normr > rad # Rejection is larger than rad
+                or (normp > norm_lpt2 + rad and p2_dist > rad) # projection along line is past p2
+                or (pos_dir < 0 and p1_dist > rad)): # we are the other way and past p1
             return None
         
-        normal = rejection/np.linalg.norm(rejection)
-        depth = np.linalg.norm(rejection) - rad
+        if normp > norm_lpt2:
+            # Must be close to p2 but past end of line
+            if p2_dist > rad:
+                return None
+            else:
+                return {'normal':p2_sep/p2_dist, 'depth':rad - p2_dist}
+        
+        if p1_dist < rad and pos_dir < 0:
+            # Past end of line but close to p1
+            return {'normal':loc_cpt/p1_dist, 'depth':rad - p1_dist}
 
-        return {'normal':normal, 'depth':depth}
+        if normr == 0.0:
+            # Circle lies exactly on the line
+            return {'normal':np.array((-projection[1], projection[0]))/normp, 'depth':rad}
+
+        return {'normal':rejection/normr, 'depth':rad - normr}
 
 
 class TrackSegment:
@@ -165,12 +219,12 @@ class TrackSegment:
         self.previous_node = prev
 
     def set_next(self, next):
+        # TODO: No need for bevels if parallel segments
         self.next_node = next
 
         intersection = find_line_intersections(self.upper, self.upper_2, self.next_node.upper, self.next_node.upper_2)
 
         if intersection is not None:
-            print("Joining Upper")
             # Upper lines are joined
             
             self.upper_2[0], self.upper_2[1] = intersection
@@ -180,7 +234,6 @@ class TrackSegment:
             self.bevel_2 = np.array((self.next_node.lower[0], self.next_node.lower[1]))
             
         else:
-            print("Joining Lower")
             # lower are joined
             intersection = find_line_intersections(self.lower, self.lower_2, self.next_node.lower, self.next_node.lower_2)
             
@@ -221,9 +274,6 @@ class TrackSegment:
 
 
 def find_line_intersections(a1, a2, b1, b2):
-    print("Intersection ({:.1f}, {:.1f}) - ({:.1f}, {:.1f}), ({:.1f}, {:.1f}) - ({:.1f}, {:.1f})".format(
-        a1[0], a1[1], a2[0], a2[1], b1[0], b1[1], b2[0], b2[1]
-    ))
     # Warning, will throw error if either line is vertical. Should never happen.
     a_m = (a2[1] - a1[1])/(a2[0] - a1[0])
     a_c = a1[1] - a_m*a1[0]
@@ -242,11 +292,8 @@ def find_line_intersections(a1, a2, b1, b2):
     ix = (b_c - a_c)/(a_m - b_m)
     iy = a_m*ix + a_c
 
-    print("Found at ({:.1f}, {:.1f})".format(ix, iy))
-
     if ix < a1[0] or ix > a2[0] or ix < b1[0] or ix > b2[0]:
         # Intersection happened outside the line segments
-        print("No intersection", ix < a1[0], ix > a2[0], ix < b1[0], ix > b2[0])
         return None
     else:
         return ix, iy

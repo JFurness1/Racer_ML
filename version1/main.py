@@ -8,6 +8,8 @@ import numpy as np
 
 
 game_window = pyglet.window.Window(800, 600)
+# pyglet.gl.glClearColor(128/255.0, 255/255.0, 128/255.0, 1)
+
 fps_display = pyglet.window.FPSDisplay(window=game_window)
 main_batch = pyglet.graphics.Batch()
 

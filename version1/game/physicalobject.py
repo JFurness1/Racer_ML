@@ -6,6 +6,7 @@ class PhysicalObject(pyglet.sprite.Sprite):
         super().__init__(*args, **kwargs)
 
         self.world_position = np.array((0.0, 0.0))
+        self.last_position = np.array((0.0, 0.0))
 
         self.velocity = np.array((0.0, 0.0))
         self.speed = 0.0
@@ -23,6 +24,9 @@ class PhysicalObject(pyglet.sprite.Sprite):
         self.normal_velocity = np.array((0.0, 0.0))
 
     def update(self, dt):
+        self.last_position[0] = self.world_position[0]
+        self.last_position[1] = self.world_position[1]
+
         self.speed = np.linalg.norm(self.velocity)
         if self.speed > 0:
             vunit = self.velocity/self.speed
@@ -70,6 +74,12 @@ class PhysicalObject(pyglet.sprite.Sprite):
         if self.world_position[1] > max_y:
             self.world_position[1] = max_y
             self.velocity[1] *= -1
+    
+    def reflect_velocity(self, normal, scale=1.0):
+        if not np.any(self.velocity):
+            return
+        
+        self.velocity = (self.velocity - 2*np.dot(self.velocity, normal)*normal)*scale
 
     def move_to(self, x, y):
         self.world_position[0] = x
