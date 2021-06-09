@@ -28,7 +28,7 @@ game_objects = [player_car]
 
 for item in game_objects:
     camera.add_item(item)
-camera.focus = player_car
+camera.set_focus(player_car, hpos=0.25)
 
 track = Track(main_batch, game_window.width, 2*game_window.height, v_segments=3, h_spacing=300)
 

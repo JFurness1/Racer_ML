@@ -1,3 +1,4 @@
+from typing import Type
 from numpy.lib.utils import byte_bounds
 import pyglet
 from pyglet import shapes
@@ -23,7 +24,7 @@ class Track:
 
         self.line_width = 5
 
-        self.new_segment_pad = max(window_width + 100, h_spacing)
+        self.new_segment_pad = max(2*window_width, h_spacing)
 
         self.hide_offscreen = True
         
@@ -72,7 +73,7 @@ class Track:
                 seg.set_visible(False)
 
     def update(self, dt, player):
-        if player.world_position[0] > self.node_list[-1][0] - self.new_segment_pad:
+        if player.world_position[0] > self.segments[-1].world_position[0] - self.new_segment_pad:
             self.generate_next_track_segment()
 
         # Collision detection
@@ -263,9 +264,11 @@ class TrackSegment:
 
         self.g_lower.x, self.g_lower.y = camera.transform_point(self.lower[0], self.lower[1])
         self.g_lower.x2, self.g_lower.y2 = camera.transform_point(self.lower_2[0], self.lower_2[1])
-
-        self.g_bevel.x, self.g_bevel.y = camera.transform_point(self.bevel[0], self.bevel[1])
-        self.g_bevel.x2, self.g_bevel.y2 = camera.transform_point(self.bevel_2[0], self.bevel_2[1])
+        try:
+            self.g_bevel.x, self.g_bevel.y = camera.transform_point(self.bevel[0], self.bevel[1])
+            self.g_bevel.x2, self.g_bevel.y2 = camera.transform_point(self.bevel_2[0], self.bevel_2[1])
+        except TypeError:
+            pass
 
     def set_visible(self, visible):
         self.g_lower.visible = visible
