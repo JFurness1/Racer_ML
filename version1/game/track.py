@@ -38,6 +38,7 @@ class Track:
     def generate_next_track_segment(self):
         next_h = self.node_list[-1][0] + self.h_spacing
         next_v = np.random.randint(self.v_segments)*self.v_spacing
+        next_v = (len(self.segments)%3)*self.v_spacing
         
         last = self.node_list[-1]
         self.segments.append(TrackSegment(last[0], last[1], next_h, next_v, self.track_width, self.batch))
@@ -52,23 +53,6 @@ class Track:
             if seg.is_on_camera(camera) or not self.hide_offscreen:
                 seg.set_visible(True)
                 seg.shift_for_camera(camera)
-                if i == self.last_seg:
-                    seg.g_upper.color = (255, 255, 255)
-                    seg.g_lower.color = (255, 255, 255)
-                    seg.g_bevel.color = (255, 255, 255)
-                    try:
-                        seg.previous_node.g_bevel.color = (255, 255, 255)
-                    except AttributeError:
-                        pass
-                
-                if i == self.seg_index:
-                    seg.g_upper.color = (0, 255, 0)
-                    seg.g_lower.color = (0, 255, 0)
-                    seg.g_bevel.color = (0, 255, 0)
-                    try:
-                        seg.previous_node.g_bevel.color = (0, 255, 0)
-                    except AttributeError:
-                        pass
             else:
                 seg.set_visible(False)
 
@@ -82,7 +66,7 @@ class Track:
 
         lines = []
 
-        for i in range(-1, 1):
+        for i in range(-1, 2):
             if self.seg_index + i < 0:
                 continue
 
@@ -183,6 +167,10 @@ class TrackSegment:
 
         self.dx = x2 - x
         self.dy = y2 - y
+        if self.dx < 1.0e-6:
+            self.grad = np.nan
+        else:
+            self.grad = self.dy/self.dx
 
         self.track_width = track_width
 
@@ -222,6 +210,10 @@ class TrackSegment:
     def set_next(self, next):
         # TODO: No need for bevels if parallel segments
         self.next_node = next
+
+        if abs(self.grad - self.next_node.grad) < 1e-6:
+            # Segments are parallel. No need for bevel
+            return
 
         intersection = find_line_intersections(self.upper, self.upper_2, self.next_node.upper, self.next_node.upper_2)
 
@@ -264,11 +256,10 @@ class TrackSegment:
 
         self.g_lower.x, self.g_lower.y = camera.transform_point(self.lower[0], self.lower[1])
         self.g_lower.x2, self.g_lower.y2 = camera.transform_point(self.lower_2[0], self.lower_2[1])
-        try:
+       
+        if self.bevel is not None:
             self.g_bevel.x, self.g_bevel.y = camera.transform_point(self.bevel[0], self.bevel[1])
             self.g_bevel.x2, self.g_bevel.y2 = camera.transform_point(self.bevel_2[0], self.bevel_2[1])
-        except TypeError:
-            pass
 
     def set_visible(self, visible):
         self.g_lower.visible = visible
@@ -284,13 +275,13 @@ def find_line_intersections(a1, a2, b1, b2):
     b_m = (b2[1] - b1[1])/(b2[0] - b1[0])
     b_c = b1[1] - b_m*b1[0]
 
-    # if a_m == b_m and a_c != b_c:
-    #     # Parallel Lines
-    #     return None
-    if a_m == b_m and a_c == b_c:
-        # Eqivalent lines, arbitrarily return a2 as intersection point
-        return a2[0], a2[1]
-
+    if np.allclose(a_m, b_m):
+        if np.allclose(a_c, b_c):
+            # Eqivalent lines, arbitrarily return a2 as intersection point
+            return a2[0], a2[1]
+        else:
+            # Parrallel lines
+            return None
 
     ix = (b_c - a_c)/(a_m - b_m)
     iy = a_m*ix + a_c
