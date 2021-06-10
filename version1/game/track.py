@@ -38,7 +38,6 @@ class Track:
     def generate_next_track_segment(self):
         next_h = self.node_list[-1][0] + self.h_spacing
         next_v = np.random.randint(self.v_segments)*self.v_spacing
-        next_v = (len(self.segments)%3)*self.v_spacing
         
         last = self.node_list[-1]
         self.segments.append(TrackSegment(last[0], last[1], next_h, next_v, self.track_width, self.batch))

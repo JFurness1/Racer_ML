@@ -52,6 +52,12 @@ class PhysicalObject(pyglet.sprite.Sprite):
         self.direction /= np.linalg.norm(self.direction)
         self.set_sprite_rot()
 
+    def turn_to_face(self, dir):
+        self.direction[0] = dir[0]
+        self.direction[1] = dir[1]
+        self.direction /= np.linalg.norm(self.direction)
+        self.set_sprite_rot()
+
     def set_sprite_rot(self):
         self.d_rotation = (np.degrees(-np.arctan2(self.direction[1], self.direction[0])) + 90.0) % 360.0
 

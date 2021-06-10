@@ -32,10 +32,11 @@ camera.set_focus(player_car, hpos=0.25)
 
 track = Track(main_batch, game_window.width, 2*game_window.height, v_segments=3, h_spacing=300)
 
-player_car.move_to(track.node_list[0][0], track.node_list[0][1])
-
 for i in range(10):
     track.generate_next_track_segment()
+
+player_car.move_to(track.segments[0].world_position[0], track.segments[0].world_position[1])
+player_car.turn_to_face([track.segments[0].dx, track.segments[0].dy])
 
 global accumulated_time
 accumulated_time = 0

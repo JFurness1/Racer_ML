@@ -35,7 +35,6 @@ class Player(physicalobject.PhysicalObject):
         super(Player, self).update(dt)
         self.collision.x, self.collision.y = camera.transform_point(self.world_position[0], self.world_position[1])
 
-
     def delete(self):
         self.engine_sprite.delete()
         super(Player, self).delete()
