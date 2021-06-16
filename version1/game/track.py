@@ -29,12 +29,14 @@ class Track:
 
         self.hide_offscreen = True
         
-        self.track_width = 100
+        self.track_width = 120
 
         self.seg_index = 0
         self.last_seg = 0
 
         self.wall_friction = 0.8
+
+        self.road_color = (204, 153, 102)
 
     def generate_next_track_segment(self):
         next_h = self.node_list[-1][0] + self.h_spacing
@@ -50,7 +52,63 @@ class Track:
 
     def draw(self, camera):
 
-        left_seg_idx = self.get_track_segment_idx(camera.world_position[0])
+        left_seg_idx = self.get_track_segment_idx(camera.bounds_min[0])
+        right_seg_idx = self.get_track_segment_idx(camera.bounds_max[0])
+
+        # We expect to need 3 triangles for most segments
+        # but parallel segments will only need 2, it's ok to have extra
+        n_tris = (right_seg_idx - left_seg_idx + 2)*3
+        if n_tris > len(self.triangle_list):
+            self.extend_tri_list_to(n_tris)
+
+        tri_ptr = -1
+
+        for sidx in range(left_seg_idx, right_seg_idx + 1):
+            seg = self.segments[sidx]
+
+            # Main segment, upper left
+            tri_ptr += 1
+            tri = self.triangle_list[tri_ptr]
+            tri.visible = True
+            tri.x = seg.upper[0]
+            tri.y = seg.upper[1]
+            tri.x2 = seg.upper_2[0]
+            tri.y2 = seg.upper_2[1]
+            tri.x3 = seg.lower[0]
+            tri.y3 = seg.lower[1]
+            camera.transform_triangle(tri)
+
+            # Main segment, lower right
+            tri_ptr += 1
+            tri2 = self.triangle_list[tri_ptr]
+            tri2.visible = True
+            tri2.x = seg.lower[0]
+            tri2.y = seg.lower[1]
+            tri2.x2 = seg.lower_2[0]
+            tri2.y2 = seg.lower_2[1]
+            tri2.x3 = seg.upper_2[0]
+            tri2.y3 = seg.upper_2[1]
+            camera.transform_triangle(tri2)
+
+            if seg.bevel is not None:
+                tri_ptr += 1
+                tri3 = self.triangle_list[tri_ptr]
+                tri3.visible = True
+                tri3.x = seg.bevel[0]
+                tri3.y = seg.bevel[1]
+                tri3.x2 = seg.bevel_2[0]
+                tri3.y2 = seg.bevel_2[1]
+                if seg.bevel_is_lower:
+                    tri3.x3 = seg.upper_2[0]
+                    tri3.y3 = seg.upper_2[1]
+                else:
+                    tri3.x3 = seg.lower_2[0]
+                    tri3.y3 = seg.lower_2[1]
+                camera.transform_triangle(tri3)
+
+        # Clean up the remaining tris by setting them as invisible
+        for i in range(tri_ptr + 1, len(self.triangle_list)):
+            self.triangle_list[i].visible = False
 
         for i, seg in enumerate(self.segments):
             if seg.is_on_camera(camera) or not self.hide_offscreen:
@@ -162,7 +220,17 @@ class Track:
         return {'normal':rejection/normr, 'depth':rad - normr}
 
     def get_track_segment_idx(self, x):
-        return int(x//self.h_spacing)
+        return int(max(0, x//self.h_spacing))
+
+    def extend_tri_list_to(self, n_tris):
+        to_add = n_tris - len(self.triangle_list)
+        if to_add <= 0:
+            return
+        
+        for i in range(to_add):
+            self.triangle_list.append(
+                pyglet.shapes.Triangle(0, 0, 0, 0, 0, 0, color=self.road_color, batch=self.batch)
+            )
 
 
 class TrackSegment:
@@ -199,6 +267,7 @@ class TrackSegment:
         self.g_lower.visible = False
         self.g_bevel.visible = False
 
+        # Bevel details remain as None if bevel is not needed
         self.bevel = None
         self.bevel_2 = None
         self.bevel_is_lower = None
@@ -215,7 +284,6 @@ class TrackSegment:
         self.previous_node = prev
 
     def set_next(self, next):
-        # TODO: No need for bevels if parallel segments
         self.next_node = next
 
         if abs(self.grad - self.next_node.grad) < 1e-6:

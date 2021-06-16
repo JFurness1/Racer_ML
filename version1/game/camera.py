@@ -45,6 +45,11 @@ class Camera:
     def transform_point(self, x, y):
         return x - self.world_position[0], y - self.world_position[1]
 
+    def transform_triangle(self, tri):
+        # Takes a triangle in world space and applies the camera space transform
+        tri.x, tri.y = self.transform_point(tri.x, tri.y)
+        tri.x2, tri.y2 = self.transform_point(tri.x2, tri.y2)
+        tri.x3, tri.y3 = self.transform_point(tri.x3, tri.y3)
 
     def add_item(self, item):
         assert hasattr(item, 'x') and hasattr(item, 'y') and hasattr(item, 'world_position'), "Inappropriate object for Camera"

@@ -43,7 +43,7 @@ accumulated_time = 0
 
 dbg_txt = "Position: ({:.1f}, {:.1f}) Direction: ({:.1f}, {:.1f}) Velocity: {:.1f} ({:.1f}, {:.1f}) Rotation: {:.1f} ({:2d})"
 dbg_txt2 = "Aligned Velocity: {:.1f} ({:.1f}, {:.1f}) Normal Velocity: {:.1f} ({:.1f}, {:.1f})"
-cam_txt = "Camera Position: ({:d}, {:d}), Segment Index: {:d}"
+cam_txt = "Camera Position: ({:d}, {:d}), Segment Index: {:d}, # tris: {:d}"
 
 @game_window.event
 def on_draw():
@@ -76,7 +76,7 @@ def update(dt):
         np.linalg.norm(player_car.aligned_velocity), player_car.aligned_velocity[0], player_car.aligned_velocity[1], 
         np.linalg.norm(player_car.normal_velocity), player_car.normal_velocity[0], player_car.normal_velocity[1]
         )
-    cam_label.text = cam_txt.format(camera.world_position[0], camera.world_position[1], track.seg_index)
+    cam_label.text = cam_txt.format(camera.world_position[0], camera.world_position[1], track.seg_index, len(track.triangle_list))
 
 if __name__ == "__main__":
     pyglet.clock.schedule_interval(update, 1/120.0)
