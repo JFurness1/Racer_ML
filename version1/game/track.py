@@ -18,6 +18,7 @@ class Track:
         self.max_segments = self.h_segments*self.v_segments
 
         self.segments = []
+        self.triangle_list = []
 
         # Initial track point
         self.node_list = [(0, self.v_spacing*v_segments//2)]
@@ -48,6 +49,9 @@ class Track:
         self.node_list.append((next_h, next_v))
 
     def draw(self, camera):
+
+        left_seg_idx = self.get_track_segment_idx(camera.world_position[0])
+
         for i, seg in enumerate(self.segments):
             if seg.is_on_camera(camera) or not self.hide_offscreen:
                 seg.set_visible(True)
@@ -61,7 +65,7 @@ class Track:
 
         # Collision detection
         self.last_seg = self.seg_index
-        self.seg_index = int(player.world_position[0]//self.h_spacing)
+        self.seg_index = self.get_track_segment_idx(player.world_position[0])
 
         lines = []
 
@@ -157,6 +161,9 @@ class Track:
 
         return {'normal':rejection/normr, 'depth':rad - normr}
 
+    def get_track_segment_idx(self, x):
+        return int(x//self.h_spacing)
+
 
 class TrackSegment:
     def __init__(self, x, y, x2, y2, track_width, batch, previous=None, next=None, *args, **kwargs):
@@ -194,6 +201,7 @@ class TrackSegment:
 
         self.bevel = None
         self.bevel_2 = None
+        self.bevel_is_lower = None
 
         self.previous_node = None
         self.next_node = None
@@ -225,6 +233,8 @@ class TrackSegment:
             self.bevel = np.array((self.lower_2[0], self.lower_2[1]))
             self.bevel_2 = np.array((self.next_node.lower[0], self.next_node.lower[1]))
             
+            self.bevel_is_lower = True
+
         else:
             # lower are joined
             intersection = find_line_intersections(self.lower, self.lower_2, self.next_node.lower, self.next_node.lower_2)
@@ -235,6 +245,8 @@ class TrackSegment:
             self.bevel = np.array((self.upper_2[0], self.upper_2[1]))
             self.bevel_2 = np.array((self.next_node.upper[0], self.next_node.upper[1]))
         
+            self.bevel_is_lower = False
+
         self.g_bevel.x = self.bevel[0]
         self.g_bevel.y = self.bevel[1]
         self.g_bevel.x2 = self.bevel_2[0]

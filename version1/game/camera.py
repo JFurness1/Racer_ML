@@ -2,17 +2,20 @@ import numpy as np
 
 class Camera:
     def __init__(self, batch, window):
-        self.world_position = np.array((0, 0))
 
         self.focus = None
-        self.focus_hpos = 0.5
-        self.focus_vpos = 0.5
+        self.focus_hpos = 0.0
+        self.focus_vpos = 0.0
 
         self.batch = batch
 
         self.window = window
         self.width = window.width
         self.height = window.height
+
+        self.world_position = np.array((0, 0))
+        self.bounds_min = [self.world_position[0], self.world_position[1]]
+        self.bounds_max = [self.world_position[0] + self.width, self.world_position[1] + self.height]
 
         self.items = []
 
@@ -52,10 +55,7 @@ class Camera:
         self.items.remove(item)
 
     def is_in_bounds(self, point):
-        hp = self.focus_hpos*self.width
-        vp = self.focus_vpos*self.height
-
-        return point[0] >= self.world_position[0] - self.bounds_padding - hp \
-                and point[0] <= self.world_position[0] + self.width + self.bounds_padding + hp \
-                and point[1] >= self.world_position[1] - self.bounds_padding - vp \
-                and point[1] <= self.world_position[1] + self.height + self.bounds_padding + vp
+        return point[0] >= self.bounds_min[0] \
+                and point[0] <= self.bounds_max[0] \
+                and point[1] >= self.bounds_min[1] \
+                and point[1] <= self.bounds_max[1]
