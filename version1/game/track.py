@@ -70,41 +70,22 @@ class Track:
             tri_ptr += 1
             tri = self.triangle_list[tri_ptr]
             tri.visible = True
-            tri.x = seg.upper[0]
-            tri.y = seg.upper[1]
-            tri.x2 = seg.upper_2[0]
-            tri.y2 = seg.upper_2[1]
-            tri.x3 = seg.lower[0]
-            tri.y3 = seg.lower[1]
-            camera.transform_triangle(tri)
+            camera.transform_triangle(seg.upper, seg.upper_2, seg.lower, tri)
 
             # Main segment, lower right
             tri_ptr += 1
             tri2 = self.triangle_list[tri_ptr]
             tri2.visible = True
-            tri2.x = seg.lower[0]
-            tri2.y = seg.lower[1]
-            tri2.x2 = seg.lower_2[0]
-            tri2.y2 = seg.lower_2[1]
-            tri2.x3 = seg.upper_2[0]
-            tri2.y3 = seg.upper_2[1]
-            camera.transform_triangle(tri2)
+            camera.transform_triangle(seg.lower, seg.lower_2, seg.upper_2, tri2)
 
             if seg.bevel is not None:
                 tri_ptr += 1
                 tri3 = self.triangle_list[tri_ptr]
                 tri3.visible = True
-                tri3.x = seg.bevel[0]
-                tri3.y = seg.bevel[1]
-                tri3.x2 = seg.bevel_2[0]
-                tri3.y2 = seg.bevel_2[1]
                 if seg.bevel_is_lower:
-                    tri3.x3 = seg.upper_2[0]
-                    tri3.y3 = seg.upper_2[1]
+                    camera.transform_triangle(seg.bevel, seg.bevel_2, seg.upper_2, tri3)
                 else:
-                    tri3.x3 = seg.lower_2[0]
-                    tri3.y3 = seg.lower_2[1]
-                camera.transform_triangle(tri3)
+                    camera.transform_triangle(seg.bevel, seg.bevel_2, seg.lower_2, tri3)
 
         # Clean up the remaining tris by setting them as invisible
         for i in range(tri_ptr + 1, len(self.triangle_list)):

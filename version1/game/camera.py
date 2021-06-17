@@ -45,11 +45,16 @@ class Camera:
     def transform_point(self, x, y):
         return x - self.world_position[0], y - self.world_position[1]
 
-    def transform_triangle(self, tri):
+    def transform_line(self, pt1, pt2, ln):
+        ln.x, ln.y = self.transform_point(pt1[0], pt1[1])
+        ln.x2, ln.y2 = self.transform_point(pt2[0], pt2[1])
+
+    def transform_triangle(self, pt1, pt2, pt3, tri):
         # Takes a triangle in world space and applies the camera space transform
-        tri.x, tri.y = self.transform_point(tri.x, tri.y)
-        tri.x2, tri.y2 = self.transform_point(tri.x2, tri.y2)
-        tri.x3, tri.y3 = self.transform_point(tri.x3, tri.y3)
+        tri.x, tri.y = self.transform_point(pt1[0], pt1[1])
+        tri.x2, tri.y2 = self.transform_point(pt2[0], pt2[1])
+        tri.x3, tri.y3 = self.transform_point(pt3[0], pt3[1])
+
 
     def add_item(self, item):
         assert hasattr(item, 'x') and hasattr(item, 'y') and hasattr(item, 'world_position'), "Inappropriate object for Camera"
@@ -64,3 +69,6 @@ class Camera:
                 and point[0] <= self.bounds_max[0] \
                 and point[1] >= self.bounds_min[1] \
                 and point[1] <= self.bounds_max[1]
+    
+    def is_in_horizontal_bounds(self, point):
+        return point[0] >= self.bounds_min[0] and point[0] <= self.bounds_max[0]
