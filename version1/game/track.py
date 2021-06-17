@@ -36,7 +36,7 @@ class Track:
 
         self.wall_friction = 0.8
 
-        self.road_color = (204, 153, 102)
+        self.road_color = (92, 92, 138)
 
     def generate_next_track_segment(self):
         next_h = self.node_list[-1][0] + self.h_spacing
@@ -110,13 +110,6 @@ class Track:
         for i in range(tri_ptr + 1, len(self.triangle_list)):
             self.triangle_list[i].visible = False
 
-        for i, seg in enumerate(self.segments):
-            if seg.is_on_camera(camera) or not self.hide_offscreen:
-                seg.set_visible(True)
-                seg.shift_for_camera(camera)
-            else:
-                seg.set_visible(False)
-
     def update(self, dt, player):
         if player.world_position[0] > self.segments[-1].world_position[0] - self.new_segment_pad:
             self.generate_next_track_segment()
@@ -143,9 +136,6 @@ class Track:
         
         hit = list(filter(None,
             [self.circle_line_collision(player.world_position, player.radius, l[0], l[1]) for l in lines]))
-
-        
-        player.collision.color = (255, 255, 255)
         
         best_hit = {'dist':None}
         for h in hit:
@@ -155,11 +145,10 @@ class Track:
                 best_hit['dist'] = dist
                 best_hit['normal'] = h['normal']
                 best_hit['depth'] = h['depth']
-            player.collision.color = (255, 0, 0)
+
         
         if best_hit['dist'] is not None:
             # increase displacement by 1 pixel to avoid 
-            print("Hit!", best_hit['normal'], best_hit['depth'])
             player.world_position += best_hit['normal']*(best_hit['depth'] + 1)
             player.reflect_velocity(best_hit['normal'], scale=self.wall_friction)
 
@@ -258,15 +247,6 @@ class TrackSegment:
         self.lower_2 = np.array((self.dy, -self.dx))
         self.lower_2 = self.track_width*self.lower_2/np.linalg.norm(self.lower_2) + self.world_position_2
 
-        self.g_upper = pyglet.shapes.Line(self.upper[0], self.upper[1], self.upper_2[0], self.upper_2[1], batch=batch)
-        self.g_lower = pyglet.shapes.Line(self.lower[0], self.lower[1], self.lower_2[0], self.lower_2[1], batch=batch)
-        self.g_bevel = pyglet.shapes.Line(0, 0, 0, 0, batch=batch)
-
-
-        self.g_upper.visible = False
-        self.g_lower.visible = False
-        self.g_bevel.visible = False
-
         # Bevel details remain as None if bevel is not needed
         self.bevel = None
         self.bevel_2 = None
@@ -315,11 +295,6 @@ class TrackSegment:
         
             self.bevel_is_lower = False
 
-        self.g_bevel.x = self.bevel[0]
-        self.g_bevel.y = self.bevel[1]
-        self.g_bevel.x2 = self.bevel_2[0]
-        self.g_bevel.y2 = self.bevel_2[1]
-
     def is_on_camera(self, camera):
         return (self.world_position[0] > camera.bounds_min[0] \
                 and self.world_position[0] < camera.bounds_max[0]) \
@@ -328,23 +303,6 @@ class TrackSegment:
             or (self.world_position[0] < camera.bounds_min[0] 
                 and self.world_position_2[0] > camera.bounds_max[0])
         # return camera.is_in_bounds((self.world_position[0] , self.world_position[1])) or camera.is_in_bounds((self.world_position_2[0], self.world_position_2[1]))
-
-    def shift_for_camera(self, camera):
-        self.g_upper.x, self.g_upper.y = camera.transform_point(self.upper[0], self.upper[1])
-        self.g_upper.x2, self.g_upper.y2 = camera.transform_point(self.upper_2[0], self.upper_2[1])
-
-        self.g_lower.x, self.g_lower.y = camera.transform_point(self.lower[0], self.lower[1])
-        self.g_lower.x2, self.g_lower.y2 = camera.transform_point(self.lower_2[0], self.lower_2[1])
-       
-        if self.bevel is not None:
-            self.g_bevel.x, self.g_bevel.y = camera.transform_point(self.bevel[0], self.bevel[1])
-            self.g_bevel.x2, self.g_bevel.y2 = camera.transform_point(self.bevel_2[0], self.bevel_2[1])
-
-    def set_visible(self, visible):
-        self.g_lower.visible = visible
-        self.g_upper.visible = visible
-        self.g_bevel.visible = visible
-
 
 def find_line_intersections(a1, a2, b1, b2):
     # Warning, will throw error if either line is vertical. Should never happen.

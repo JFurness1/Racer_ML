@@ -18,7 +18,6 @@ class Player(physicalobject.PhysicalObject):
         self.key_handler = key.KeyStateHandler()
 
         self.radius = 45
-        self.collision = shapes.Arc(self.world_position[0], self.world_position[1], self.radius, closed=True, color=(255,255,255))
 
     def update(self, dt, camera):
         if self.key_handler[key.LEFT]:
@@ -33,7 +32,7 @@ class Player(physicalobject.PhysicalObject):
             self.force += self.direction*self.thrust*dt
         
         super(Player, self).update(dt)
-        self.collision.x, self.collision.y = camera.transform_point(self.world_position[0], self.world_position[1])
+        self.world_position[0] = max(self.radius, self.world_position[0])
 
     def delete(self):
         self.engine_sprite.delete()
