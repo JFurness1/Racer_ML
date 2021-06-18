@@ -1,9 +1,9 @@
 import pyglet
 from game import resources
-from game.physicalobject import PhysicalObject
 from game.player import Player
 from game.camera import Camera
 from game.track import Track
+from game.skidmarks import SkidmarkManager
 import numpy as np
 
 
@@ -13,6 +13,7 @@ pyglet.gl.glClearColor(128/255.0, 255/255.0, 128/255.0, 1)
 fps_display = pyglet.window.FPSDisplay(window=game_window)
 main_batch = pyglet.graphics.Batch()
 background_batch = pyglet.graphics.Batch()
+skid_batch = pyglet.graphics.Batch()
 
 camera = Camera(main_batch, game_window)
 
@@ -32,6 +33,7 @@ for item in game_objects:
 camera.set_focus(player_car, hpos=0.25)
 
 track = Track(background_batch, game_window.width, 2*game_window.height, v_segments=3, h_spacing=300)
+skidman = SkidmarkManager(skid_batch)
 
 for i in range(10):
     track.generate_next_track_segment()
@@ -51,6 +53,7 @@ def on_draw():
     game_window.clear()
     fps_display.draw()
     background_batch.draw()
+    skid_batch.draw()
     main_batch.draw()
 
 def update(dt):
@@ -59,13 +62,14 @@ def update(dt):
     fps = 1/60.0
     while accumulated_time >= fps:
         for obj in game_objects:
-            obj.update(fps, camera)
+            obj.update(fps, skidman)
 
         track.update(fps, player_car)
         accumulated_time -= fps
 
     camera.update(dt)
     track.draw(camera)
+    skidman.draw(camera)
     camera.draw()
     
     dbg_label.text = dbg_txt.format(player_car.world_position[0], player_car.world_position[1], 
