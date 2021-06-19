@@ -2,6 +2,7 @@ import numpy as np
 from pyglet.window import key
 from pyglet import shapes
 from . import physicalobject, resources
+import Settings
 
 class Player(physicalobject.PhysicalObject):
 
@@ -65,7 +66,7 @@ class Player(physicalobject.PhysicalObject):
             self.is_skidding = True
 
         if self.skid_elapsed == 0:
-            if self.is_skidding:
+            if not Settings.ML_MODE and self.is_skidding:
                 r_dir_cos = np.cos(np.radians(self.d_rotation))
                 r_dir_sin = np.sin(np.radians(self.d_rotation))
                 l_dir_cos = np.cos(np.radians(self.last_skid_d_rotation))

@@ -3,11 +3,9 @@ from pyglet import shapes
 import numpy as np
 
 class SkidmarkManager:
-    # one for each tyre
-    MAX_SKIDS = 48*4
-
-    def __init__(self, batch):
+    def __init__(self, batch, MAX_SKIDS=192):
         self.batch = batch
+        self.MAX_SKIDS = MAX_SKIDS
 
         self.skid_ptr = 0
 

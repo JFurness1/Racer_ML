@@ -3,6 +3,7 @@ from numpy.lib.utils import byte_bounds
 import pyglet
 from pyglet import shapes
 import numpy as np
+import Settings
 
 class Track:
     def __init__(self, batch, window_width, track_height, h_spacing=200, v_segments=5, track_width=120):
@@ -36,7 +37,11 @@ class Track:
 
         self.wall_friction = 0.8
 
-        self.road_color = (92, 92, 138)
+        if Settings.ML_MODE:
+            self.road_color = (255, 255, 255)
+        else:
+            self.road_color = (92, 92, 138)
+
 
     def generate_next_track_segment(self):
         next_h = self.node_list[-1][0] + self.h_spacing
