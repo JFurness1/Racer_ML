@@ -5,9 +5,9 @@ from game.player import Player
 from game.camera import Camera
 from game.track import Track
 from game.skidmarks import SkidmarkManager
+from game.inputmanager import InputManager
 import Settings
 import numpy as np
-
 
 game_window = pyglet.window.Window(Settings.RENDER_WIDTH, Settings.RENDER_HEIGHT)
 if Settings.ML_MODE:
@@ -22,6 +22,9 @@ skid_batch = pyglet.graphics.Batch()
 
 camera = Camera(main_batch, game_window)
 
+input_man = InputManager()
+game_window.push_handlers(input_man.key_handler)
+
 if not Settings.ML_MODE:
     dbg_label = pyglet.text.Label(text="N/A", x=10, y=camera.height, anchor_y='top', batch=main_batch, color=(0,0,0,255))
     dbg_label2 = pyglet.text.Label(text="N/A", x=10, y=camera.height-20, anchor_y='top', batch=main_batch, color=(0,0,0,255))
@@ -32,12 +35,7 @@ player_car = Player(resources.player_img, x=400, y=200, batch=main_batch)
 
 player_car.visible = not Settings.ML_MODE
 
-game_window.push_handlers(player_car.key_handler)
-
-game_objects = [player_car]
-
-for item in game_objects:
-    camera.add_item(item)
+camera.add_item(player_car)
 camera.set_focus(player_car, hpos=0.25)
 
 track = Track(background_batch, camera.WORLD_WIDTH, 2*camera.WORLD_HEIGHT, v_segments=3, h_spacing=300)
@@ -48,9 +46,6 @@ for i in range(10):
 
 player_car.move_to(track.segments[0].world_position[0], track.segments[0].world_position[1])
 player_car.turn_to_face([track.segments[0].dx, track.segments[0].dy])
-
-global accumulated_time
-accumulated_time = 0
 
 dbg_txt = "Position: ({:.1f}, {:.1f}) Direction: ({:.1f}, {:.1f}) Velocity: {:.1f} ({:.1f}, {:.1f}) Rotation: {:.1f} ({:2d})"
 dbg_txt2 = "Aligned Velocity: {:.1f} ({:.1f}, {:.1f}) Normal Velocity: {:.1f} ({:.1f}, {:.1f})"
@@ -74,19 +69,16 @@ def on_draw():
         arr = np.frombuffer(image_data.get_data(), dtype=np.uint8)
 
         arr = arr.reshape(buffer.height, buffer.width, 4)
-        print(arr.shape)
+        print(arr.shape, np.max(arr))
 
 
 def update(dt):
-    global accumulated_time
-    accumulated_time += dt
     fps = 1/60.0
-    while accumulated_time >= fps:
-        for obj in game_objects:
-            obj.update(fps, skidman)
 
-        track.update(fps, player_car)
-        accumulated_time -= fps
+    inputs = input_man.update()
+    player_car.update(fps, skidman, inputs)
+
+    track.update(fps, player_car)
 
     camera.update(dt)
     track.draw(camera)

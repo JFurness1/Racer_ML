@@ -1,5 +1,4 @@
 import numpy as np
-from pyglet.window import key
 from pyglet import shapes
 from . import physicalobject, resources
 import Settings
@@ -26,7 +25,7 @@ class Player(physicalobject.PhysicalObject):
 
         self.frame = 3
 
-        self.key_handler = key.KeyStateHandler()
+
 
         self.radius = 45
 
@@ -44,17 +43,14 @@ class Player(physicalobject.PhysicalObject):
         self.last_skid_d_rotation = self.d_rotation
         self.is_skidding = False
 
-    def update(self, dt, skidman):
-        if self.key_handler[key.LEFT]:
-            self.rotate(np.radians(self.rotate_speed*dt))    
-        if self.key_handler[key.RIGHT]:
-            self.rotate(-np.radians(self.rotate_speed*dt))
+    def update(self, dt, skidman, inputs):
+        
+        self.rotate(inputs.rot*np.radians(self.rotate_speed*dt))
             
         self.frame = int((max(0.0, self.d_rotation) + 15)//23)%16
         self.image = self.ss[self.frame]
 
-        if self.key_handler[key.UP]:
-            self.force += self.direction*self.thrust*dt
+        self.force += inputs.accel*self.direction*self.thrust*dt
         
         super(Player, self).update(dt)
         self.world_position[0] = max(self.radius, self.world_position[0])
