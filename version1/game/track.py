@@ -5,7 +5,7 @@ from pyglet import shapes
 import numpy as np
 
 class Track:
-    def __init__(self, batch, window_width, track_height, h_spacing=200, v_segments=5, track_width=100):
+    def __init__(self, batch, window_width, track_height, h_spacing=200, v_segments=5, track_width=120):
         self.world_position = np.array((0.0, 0.0))
         
         self.batch = batch
@@ -29,7 +29,7 @@ class Track:
 
         self.hide_offscreen = True
         
-        self.track_width = 120
+        self.track_width = track_width
 
         self.seg_index = 0
         self.last_seg = 0

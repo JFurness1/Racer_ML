@@ -1,6 +1,10 @@
 import numpy as np
 
 class Camera:
+
+    WORLD_WIDTH = 800
+    WORLD_HEIGHT = 600
+
     def __init__(self, batch, window):
 
         self.focus = None
@@ -13,9 +17,12 @@ class Camera:
         self.width = window.width
         self.height = window.height
 
+        self.h_scale = self.width/self.WORLD_WIDTH
+        self.v_scale = self.height/self.WORLD_HEIGHT
+
         self.world_position = np.array((0, 0))
         self.bounds_min = [self.world_position[0], self.world_position[1]]
-        self.bounds_max = [self.world_position[0] + self.width, self.world_position[1] + self.height]
+        self.bounds_max = [self.world_position[0] + self.WORLD_WIDTH, self.world_position[1] + self.WORLD_HEIGHT]
 
         self.items = []
 
@@ -28,22 +35,24 @@ class Camera:
 
     def update(self, dt):
         if self.focus is not None:
-            self.world_position[0] = self.focus.world_position[0] - self.width*self.focus_hpos
-            self.world_position[1] = self.focus.world_position[1] - self.height*self.focus_vpos
+            self.world_position[0] = self.focus.world_position[0] - self.WORLD_WIDTH*self.focus_hpos
+            self.world_position[1] = self.focus.world_position[1] - self.WORLD_HEIGHT*self.focus_vpos
         self.bounds_min = [
-            self.world_position[0] - self.bounds_padding - self.focus_hpos*self.width, 
-            self.world_position[1] - self.bounds_padding - self.focus_vpos*self.height]
+            self.world_position[0] - self.bounds_padding - self.focus_hpos*self.WORLD_WIDTH, 
+            self.world_position[1] - self.bounds_padding - self.focus_vpos*self.WORLD_HEIGHT]
         self.bounds_max = [
-            self.world_position[0] + (1 + self.focus_hpos)*self.width + self.bounds_padding,
-            self.world_position[1] + (1 + self.focus_vpos)*self.height +  self.bounds_padding]
+            self.world_position[0] + (1 + self.focus_hpos)*self.WORLD_WIDTH + self.bounds_padding,
+            self.world_position[1] + (1 + self.focus_vpos)*self.WORLD_HEIGHT +  self.bounds_padding]
 
     
     def draw(self):
         for item in self.items:
             item.x, item.y = self.transform_point(item.world_position[0], item.world_position[1])
+            item.scale_x = self.h_scale
+            item.scale_y = self.v_scale
         
     def transform_point(self, x, y):
-        return x - self.world_position[0], y - self.world_position[1]
+        return (x - self.world_position[0])*self.h_scale, (y - self.world_position[1])*self.v_scale
 
     def transform_line(self, pt1, pt2, ln):
         ln.x, ln.y = self.transform_point(pt1[0], pt1[1])

@@ -7,7 +7,7 @@ from game.skidmarks import SkidmarkManager
 import numpy as np
 
 
-game_window = pyglet.window.Window(800, 600)
+game_window = pyglet.window.Window(133, 100)
 pyglet.gl.glClearColor(153/255.0, 255/255.0, 204/255.0, 1)
 
 fps_display = pyglet.window.FPSDisplay(window=game_window)
@@ -18,10 +18,10 @@ skid_batch = pyglet.graphics.Batch()
 camera = Camera(main_batch, game_window)
 
 
-score_label = pyglet.text.Label(text="Score: 0", x=10, y=460, batch=main_batch, color=(0,0,0,255))
-dbg_label = pyglet.text.Label(text="N/A", x=10, y=game_window.height, anchor_y='top', batch=main_batch, color=(0,0,0,255))
-dbg_label2 = pyglet.text.Label(text="N/A", x=10, y=game_window.height-20, anchor_y='top', batch=main_batch, color=(0,0,0,255))
-cam_label = pyglet.text.Label(text="N/A", x=10, y=game_window.height-40, anchor_y='top', batch=main_batch, color=(0,0,0,255))
+dbg_label = pyglet.text.Label(text="N/A", x=10, y=camera.height, anchor_y='top', batch=main_batch, color=(0,0,0,255))
+dbg_label2 = pyglet.text.Label(text="N/A", x=10, y=camera.height-20, anchor_y='top', batch=main_batch, color=(0,0,0,255))
+cam_label = pyglet.text.Label(text="N/A", x=10, y=camera.height-40, anchor_y='top', batch=main_batch, color=(0,0,0,255))
+score_label = pyglet.text.Label(text="Score: 0", x=10, y=camera.height-60, anchor_y='top', batch=main_batch, color=(0,0,0,255))
 
 player_car = Player(resources.player_img, x=400, y=200, batch=main_batch)
 game_window.push_handlers(player_car.key_handler)
@@ -32,7 +32,7 @@ for item in game_objects:
     camera.add_item(item)
 camera.set_focus(player_car, hpos=0.25)
 
-track = Track(background_batch, game_window.width, 2*game_window.height, v_segments=3, h_spacing=300)
+track = Track(background_batch, camera.WORLD_WIDTH, 2*camera.WORLD_HEIGHT, v_segments=3, h_spacing=300)
 skidman = SkidmarkManager(skid_batch)
 
 for i in range(10):
