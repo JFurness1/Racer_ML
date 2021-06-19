@@ -67,6 +67,16 @@ def on_draw():
     skid_batch.draw()
     main_batch.draw()
 
+    # This code seems to show how to get the frame as a pixel array
+    if Settings.ML_MODE:
+        buffer = pyglet.image.get_buffer_manager().get_color_buffer()
+        image_data = buffer.get_image_data()
+        arr = np.frombuffer(image_data.get_data(), dtype=np.uint8)
+
+        arr = arr.reshape(buffer.height, buffer.width, 4)
+        print(arr.shape)
+
+
 def update(dt):
     global accumulated_time
     accumulated_time += dt
