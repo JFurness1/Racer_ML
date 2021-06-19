@@ -9,10 +9,16 @@ class Player(physicalobject.PhysicalObject):
 
     MIN_SKID_SPEED = 60
 
+    SCORE_DECAY = 60
+
+    WALL_PENALTY = 100
+
     def __init__(self, ss, *args, **kwargs):
         self.ss = ss
-        
+
         super(Player, self).__init__(img=self.ss[0], *args, **kwargs)
+
+        self.score = 0
 
         self.thrust = 20000.0
         self.rotate_speed = 200.0
@@ -73,6 +79,8 @@ class Player(physicalobject.PhysicalObject):
             self.is_skidding = False
         
         self.skid_elapsed = (self.skid_elapsed + 1)%self.SKID_INTERVAL
+
+        self.score += self.world_position[0] - self.last_position[0] - dt*self.SCORE_DECAY
 
     def skid_opacity(self, v):
         return np.max((0.0, np.min((1.0, np.tanh((v - self.MIN_SKID_SPEED)/(3.0*self.MIN_SKID_SPEED))))))

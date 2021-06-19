@@ -132,6 +132,7 @@ class Track:
             # increase displacement by 1 pixel to avoid 
             player.world_position += best_hit['normal']*(best_hit['depth'] + 1)
             player.reflect_velocity(best_hit['normal'], scale=self.wall_friction)
+            player.score -= player.WALL_PENALTY
 
     def circle_line_collision(self, cpt, rad, lpt1, lpt2):
         if np.allclose(lpt1, lpt2):

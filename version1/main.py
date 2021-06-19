@@ -8,7 +8,7 @@ import numpy as np
 
 
 game_window = pyglet.window.Window(800, 600)
-pyglet.gl.glClearColor(128/255.0, 255/255.0, 128/255.0, 1)
+pyglet.gl.glClearColor(153/255.0, 255/255.0, 204/255.0, 1)
 
 fps_display = pyglet.window.FPSDisplay(window=game_window)
 main_batch = pyglet.graphics.Batch()
@@ -47,6 +47,8 @@ accumulated_time = 0
 dbg_txt = "Position: ({:.1f}, {:.1f}) Direction: ({:.1f}, {:.1f}) Velocity: {:.1f} ({:.1f}, {:.1f}) Rotation: {:.1f} ({:2d})"
 dbg_txt2 = "Aligned Velocity: {:.1f} ({:.1f}, {:.1f}) Normal Velocity: {:.1f} ({:.1f}, {:.1f})"
 cam_txt = "Camera Position: ({:d}, {:d}), Segment Index: {:d}, # tris: {:d}"
+score_txt = "Score: {:.1f}"
+
 
 @game_window.event
 def on_draw():
@@ -82,6 +84,8 @@ def update(dt):
         np.linalg.norm(player_car.normal_velocity), player_car.normal_velocity[0], player_car.normal_velocity[1]
         )
     cam_label.text = cam_txt.format(camera.world_position[0], camera.world_position[1], track.seg_index, len(track.triangle_list))
+
+    score_label.text = score_txt.format(player_car.score)
 
 if __name__ == "__main__":
     pyglet.clock.schedule_interval(update, 1/120.0)
