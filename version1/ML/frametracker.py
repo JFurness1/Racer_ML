@@ -15,10 +15,17 @@ class FrameTracker:
         assert len(self.memory) > 0, "Memory must have at least one frame to return shape"
         
         if len(self.memory) < HyperParameters.FRAME_STACK_SIZE:
-            out = np.zeros((HyperParameters.FRAME_STACK_SIZE,) + self.memory[0].shape)
-            for i, frame in enumerate(self.memory):
-                out[i] = frame
-            return out
+            state = np.zeros((HyperParameters.FRAME_STACK_SIZE,) + self.memory[0].shape)
+            state[0] = self.memory[0]
+            last_good = 0
+            for i in range(1, len(self.memory)):
+                try:
+                    state[i] = self.memory[i]
+                    last_good += 1
+                except IndexError:
+                    state[i] = self.memory[last_good]
         else:
-            return np.array(self.memory)
+            state = np.array(self.memory)
+        
+        return state
 
