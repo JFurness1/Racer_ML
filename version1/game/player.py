@@ -1,6 +1,8 @@
 import numpy as np
 from pyglet import shapes
 import math
+
+import pyglet
 from . import physicalobject, resources
 import Settings
 
@@ -26,15 +28,13 @@ class Player(physicalobject.PhysicalObject):
 
         self.frame = 3
 
-        self.radius = 45
+        self.radius = 25
 
-        rad_turn = np.radians(45)
-        wheel_offsets = np.array((np.sin(rad_turn), np.cos(rad_turn)))*self.radius
         self.wheel_offsets = [
-            wheel_offsets,
-            wheel_offsets*-1,
-            np.array((-wheel_offsets[0], wheel_offsets[1])),
-            np.array((wheel_offsets[0], -wheel_offsets[1]))
+            np.array((18, 36)),
+            np.array((-18, 36)),
+            np.array((18, -30)),
+            np.array((-18, -30))
         ]
 
         self.skid_elapsed = 0
@@ -54,7 +54,6 @@ class Player(physicalobject.PhysicalObject):
         
         super(Player, self).update(dt)
         self.world_position[0] = max(self.radius, self.world_position[0])
-
 
         # If we are moving sideways fast enough to trigger skid at *any* point in the 
         # skid check time. Resets when skid_elapsed ticks over

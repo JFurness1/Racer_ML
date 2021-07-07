@@ -1,5 +1,4 @@
 from typing import Set
-# from version1.game import player
 import pyglet
 from game import resources
 from game.player import Player
