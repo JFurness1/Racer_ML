@@ -43,7 +43,6 @@ class Camera:
         self.bounds_max = [
             self.world_position[0] + (1 + self.focus_hpos)*self.WORLD_WIDTH + self.bounds_padding,
             self.world_position[1] + (1 + self.focus_vpos)*self.WORLD_HEIGHT +  self.bounds_padding]
-
     
     def draw(self):
         for item in self.items:

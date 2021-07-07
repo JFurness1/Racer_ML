@@ -1,5 +1,6 @@
 import numpy as np
 from pyglet import shapes
+import math
 from . import physicalobject, resources
 import Settings
 
@@ -25,8 +26,6 @@ class Player(physicalobject.PhysicalObject):
 
         self.frame = 3
 
-
-
         self.radius = 45
 
         rad_turn = np.radians(45)
@@ -46,14 +45,16 @@ class Player(physicalobject.PhysicalObject):
     def update(self, dt, skidman, inputs):
         
         self.rotate(inputs.rot*np.radians(self.rotate_speed*dt))
-            
-        self.frame = int((max(0.0, self.d_rotation) + 15)//23)%16
+
+        step = 360.0/len(self.ss)
+        self.frame = math.ceil((self.d_rotation)//step)
         self.image = self.ss[self.frame]
 
         self.force += inputs.accel*self.direction*self.thrust*dt
         
         super(Player, self).update(dt)
         self.world_position[0] = max(self.radius, self.world_position[0])
+
 
         # If we are moving sideways fast enough to trigger skid at *any* point in the 
         # skid check time. Resets when skid_elapsed ticks over
@@ -63,10 +64,10 @@ class Player(physicalobject.PhysicalObject):
 
         if self.skid_elapsed == 0:
             if not Settings.ML_MODE and self.is_skidding:
-                r_dir_cos = np.cos(np.radians(self.d_rotation))
-                r_dir_sin = np.sin(np.radians(self.d_rotation))
-                l_dir_cos = np.cos(np.radians(self.last_skid_d_rotation))
-                l_dir_sin = np.sin(np.radians(self.last_skid_d_rotation))
+                r_dir_cos = np.cos(np.radians(-self.d_rotation))
+                r_dir_sin = np.sin(np.radians(-self.d_rotation))
+                l_dir_cos = np.cos(np.radians(-self.last_skid_d_rotation))
+                l_dir_sin = np.sin(np.radians(-self.last_skid_d_rotation))
                 for offset in self.wheel_offsets:
                     rot = np.array((offset[0]*r_dir_cos - offset[1]*r_dir_sin, offset[0]*r_dir_sin + offset[1]*r_dir_cos))
                     l_rot = np.array((offset[0]*l_dir_cos - offset[1]*l_dir_sin, offset[0]*l_dir_sin + offset[1]*l_dir_cos))

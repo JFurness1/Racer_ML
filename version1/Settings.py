@@ -1,0 +1,8 @@
+ML_MODE = False
+
+if ML_MODE:
+    RENDER_WIDTH = 133
+    RENDER_HEIGHT = 100
+else:
+    RENDER_WIDTH = 800
+    RENDER_HEIGHT = 600
